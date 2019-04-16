@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 
 DATA_PATH = 'data/dataset_mood_smartphone.csv'
 
@@ -119,28 +121,77 @@ def remove_days(data):
     return data
 
 data = remove_days(data)
+data.to_csv(path_or_buf = 'data/data.csv')
 
 
 
+################################## CORRELATION MATRXIX ####################################
 
-
-def init_pacients(data1):
-    pacients = {}
+def correlation(data):
+    data_corr = data.drop(columns = ['id','time'])
+    total_corr = data_corr.corr()
+    pacient_mood_corr = pd.DataFrame()
+    
+    pacient_corr= {}    
     for pid in ids:
-        pacients[pid] = {}
-        pacient_dataframe = data1.loc[data1[pacient_ID] == pid]
-        pacient_dates = pacient_dataframe[time].unique()
+        pacient_dataframe = data.loc[data[pacient_ID] == pid].drop(columns = ['id','time'])
+        pacient_corr[pid] = pacient_dataframe.corr()
+        pacient_mood_corr[pid] = pacient_corr[pid].mood 
         
-        for date in pacient_dates:
-            pacients[pid][date] = {}
-            for var in variables:
-                pacients[pid][date][var] = float('nan')
-    for idx, row in data1.iterrows():    
-        pacients[row['id']][row['time']][row['variable']] = row['value']
-    return pacients
-            
+    
+    return total_corr, pacient_corr, pacient_mood_corr
 
-pacients = init_pacients(data1)
+total_corr, pacient_corr, pacient_mood_corr = correlation(data)
+
+
+####################### INDIVIDUALIZE DATA AND REMOVE INDIVIDUAL DIMS ######################
+
+def individualize(data, pacient_mood_corr):
+    pacients = {}    
+    for pid in ids:
+         pacient_dataframe = data.loc[data[pacient_ID] == pid]
+         pacient_corr = pacient_mood_corr[pid]
+         nan_vars = pacient_corr.index[(pacient_corr.isna()) | 
+                                       ((pacient_corr > -0.05) &
+                                        (pacient_corr < 0.05))].tolist()
+         nan_vars += ['id','screen']                                       
+         
+         pacient_dataframe= pacient_dataframe.drop(columns = nan_vars)
+         pacients[pid] = pacient_dataframe
+    
+    return pacients
+
+pacients_original = individualize(data, pacient_mood_corr)
+
+
+#################################### STANDARDIZATION #########################################
+
+pacients_standardized = {}
+for pid in ids:    
+    ss = StandardScaler()
+    scaled_features = pacients_original[pid].drop(columns = 'time').copy()
+    col_names = set(scaled_features.columns)
+    mean_var = set(['mood','activity','circumplex.arousal','circumplex.valence'])
+    col_names = list(col_names-mean_var)
+    
+    features = scaled_features[col_names]
+    scaler = StandardScaler().fit(features.values)
+    features = scaler.transform(features.values)    
+    scaled_features[col_names] = features  
+    
+    pacients_standardized[pid] = scaled_features
+    
+    
+    
+
+        
+      
+    
+        
+        
+        
+        
+ 
 
 def plots(data1,variables):    
     for var in variables:
