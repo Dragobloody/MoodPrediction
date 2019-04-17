@@ -234,19 +234,21 @@ X_train, y_train, X_test, y_test = train_test(pacients_standardized, 0.75)
 
 
 ################################# Evaluation function ###############################
-#TODO
+#TODO Issue #1
         
 #################################### Benchmark alg ######################################
-#TODO
+#TODO Issue #2
 
 #################################### SVM ######################################
-#TODO
+#TODO Issue #3
 
 #################################### ARIMA ######################################
-#TODO
+#TODO Issue #4
 
 #################################### result Statistics ######################################
-#TODO
+#TODO Issue #5
+
+
 def plots(data1,variables):    
     for var in variables:
         values = list(data1.loc[data1['variable'] == var]['value'])
