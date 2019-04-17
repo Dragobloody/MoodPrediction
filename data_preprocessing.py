@@ -259,6 +259,20 @@ def benchmark(X_test, period):
 
 #################################### SVM ######################################
 #TODO Issue #3
+    
+from sklearn.svm import SVR
+
+def svm_regression(X_train, y_train, X_test):
+    predictions = {}
+    for pid in ids:
+        svm_reg = SVR(kernel = 'poly', degree = 3, gamma = 'auto')
+        svm_reg.fit(X_train[pid], y_train[pid])
+        predictions[pid] = svm_reg.predict(X_test[pid])
+        
+    return predictions
+        
+        
+        
 
 #################################### ARIMA ######################################
 #TODO Issue #4
@@ -268,10 +282,13 @@ def benchmark(X_test, period):
 
 
 
+
+
+
 ##############################  Tests ###########################
     
 bench_predictions = benchmark(X_test, period = 3)
-
+svr_predictions = svm_regression(X_train, y_train, X_test)
 
 
 
