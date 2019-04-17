@@ -231,9 +231,22 @@ def train_test(patient_data, ratio_train, period = 3):
       
     
 X_train, y_train, X_test, y_test = train_test(pacients_standardized, 0.75)
+
+
+################################# Evaluation function ###############################
+#TODO
         
+#################################### Benchmark alg ######################################
+#TODO
 
+#################################### SVM ######################################
+#TODO
 
+#################################### ARIMA ######################################
+#TODO
+
+#################################### result Statistics ######################################
+#TODO
 def plots(data1,variables):    
     for var in variables:
         values = list(data1.loc[data1['variable'] == var]['value'])
@@ -242,7 +255,7 @@ def plots(data1,variables):
         plt.savefig('plots/hist_' + var + '.png')
         
 
-plots(data_5,variables)
+
     
     
     
