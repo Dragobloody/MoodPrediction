@@ -237,8 +237,6 @@ def train_test(patient_data, ratio_train, period = 3):
         
       
     
-X_train, y_train, X_test, y_test = train_test(pacients_standardized, 0.75)
-
 
 ################################# Evaluation function ###############################
 #Issue #1
@@ -258,14 +256,14 @@ def benchmark(X_test, period):
 
 
 #################################### SVM ######################################
-#TODO Issue #3
+# Issue #3
     
 from sklearn.svm import SVR
 
-def svm_regression(X_train, y_train, X_test):
+def svm_regression(X_train, y_train, X_test, kernel = 'ploy', degree = 3):
     predictions = {}
     for pid in ids:
-        svm_reg = SVR(kernel = 'poly', degree = 3, gamma = 'auto')
+        svm_reg = SVR(kernel = kernel, degree = degree, gamma = 'auto')
         svm_reg.fit(X_train[pid], y_train[pid])
         predictions[pid] = svm_reg.predict(X_test[pid])
         
@@ -278,18 +276,38 @@ def svm_regression(X_train, y_train, X_test):
 #TODO Issue #4
 
 #################################### result Statistics ######################################
-#TODO Issue #5
+# Issue #5
 
-
+def prediction_stats(predictions, y_test, eval_func = mse):
+    result = []
+    for pid in ids:
+        result.append(eval_func(predictions[pid], y_test[pid]))
+        
+    return np.array(result)
+    
 
 
 
 
 ##############################  Tests ###########################
     
+X_train, y_train, X_test, y_test = train_test(pacients_standardized, 0.7)
 bench_predictions = benchmark(X_test, period = 3)
-svr_predictions = svm_regression(X_train, y_train, X_test)
+svr_predictions = svm_regression(X_train, y_train, X_test, kernel = 'rbf', 
+                                 degree = 2)
 
+bench = prediction_stats(bench_predictions, y_test)
+svr = prediction_stats(svr_predictions, y_test)
+
+
+plt.figure()
+plt.plot(bench, label = 'bench')
+plt.plot(svr, label = 'svr')
+plt.title('MSE for each patient')
+plt.xlabel("Patient number")
+plt.ylabel("MSE")
+plt.legend(loc='upper left')
+plt.show()
 
 
 def plots(data1,variables):    
