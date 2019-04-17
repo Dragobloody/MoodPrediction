@@ -234,7 +234,10 @@ X_train, y_train, X_test, y_test = train_test(pacients_standardized, 0.75)
 
 
 ################################# Evaluation function ###############################
-#TODO Issue #1
+#Issue #1
+
+def mse(prediction, target):
+    return np.sum((target - prediction)**2)/target.size
         
 #################################### Benchmark alg ######################################
 #TODO Issue #2
