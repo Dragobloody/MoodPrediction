@@ -25,7 +25,7 @@ data = data.dropna()
 
 ids = data[pacient_ID].unique()
 variables = data[attribute].unique()
-dates =  data[time].unique()   
+ 
 
 
 ############################ GET STATISTICS AND CLEAN DATA ###############################
@@ -102,13 +102,20 @@ def fill_missing_data(data, ids, variables):
 data =  fill_missing_data(data, ids, variables)
 data.to_csv(path_or_buf = 'data/data.csv')
 
-
+# data = pd.read_csv('data/data.csv')
+# data = data.drop(columns = data.columns[0])
 
 ###################### REMOVE DAYS WITH NO RELEVANT DATA(SPARSE DATA) ######################### 
 
 data = pd.crosstab(index = [data['id'],data['time']], 
                    columns = data['variable'], values = data['value'], 
                    aggfunc = lambda x:x).reset_index()
+
+# Swap 3rd column with mood, so later mood is the first column
+columns_new = data.columns.values.copy() 
+columns_new[2], columns_new[18] = columns_new[18], columns_new[2]
+data = data[columns_new]
+
 
 
 def remove_days(data):
@@ -240,7 +247,15 @@ def mse(prediction, target):
     return np.sum((target - prediction)**2)/target.size
         
 #################################### Benchmark alg ######################################
-#TODO Issue #2
+# Issue #2
+    
+def benchmark(X_test, period):
+    predictions = {}
+    for pid in ids:
+        predictions[pid] = (X_test[pid])[:,period - 1]
+        
+    return predictions
+
 
 #################################### SVM ######################################
 #TODO Issue #3
@@ -250,6 +265,14 @@ def mse(prediction, target):
 
 #################################### result Statistics ######################################
 #TODO Issue #5
+
+
+
+##############################  Tests ###########################
+    
+bench_predictions = benchmark(X_test, period = 3)
+
+
 
 
 def plots(data1,variables):    
