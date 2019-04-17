@@ -16,8 +16,11 @@ time = data.columns[1]
 attribute = data.columns[2]
 value = data.columns[3]
 
+# sort data in DataFrame
 data = data.sort_values(by = [pacient_ID,time,attribute])
+# get rig of time leave only date
 data[time] = (pd.to_datetime(data[time], format='%Y-%m-%d %H:%M:%S.%f')).dt.date
+# get rid of NaN rows (occurs only for circumplex.*)
 data = data.dropna()
 
 ids = data[pacient_ID].unique()
@@ -183,15 +186,53 @@ for pid in ids:
     
     
     
+################################ Training/Testing Data ############################
+    
+def train_test(patient_data, ratio_train, period = 3):
+    ''' all variables are patient specific
+        patient _data - dictionar with data for each patient
+        ratio_train - ration from the original data to use for train
+        period - how many days to use for regression
+    '''
+    X_train = {}
+    y_train = {}
+    X_test = {}
+    y_test = {}
+    for pid in ids:
+        split_index = int(patient_data[pid].shape[0]*ratio_train)
+        pid_data = patient_data[pid]
+        
+        ## Train dataset
+        X_train[pid] = []
+        y_train[pid] = []
+        # first day from test is also the last label for train that is why we add 1
+        for i in range(split_index - period + 1):
+            X_train[pid].append(pid_data.iloc[i:i+period, :].values.ravel(order='F'))
+            y_train[pid].append(pid_data.iloc[i+period].mood)
+        
+        X_train[pid] = np.array(X_train[pid])
+        y_train[pid] = np.array(y_train[pid])
+            
+        ## Test dataset
+        X_test[pid] = []
+        y_test[pid] = []
+        # first day from test is also the last label for train that is why we add 1
+        for i in range(split_index, pid_data.shape[0] - period):
+            X_test[pid].append(pid_data.iloc[i:i+period, :].values.ravel(order='F'))
+            y_test[pid].append(pid_data.iloc[i+period].mood)
+            
+            
+        X_test[pid] = np.array(X_test[pid])
+        y_test[pid] = np.array(y_test[pid])
+    
+    return (X_train, y_train, X_test, y_test)
 
         
       
     
+X_train, y_train, X_test, y_test = train_test(pacients_standardized, 0.75)
         
-        
-        
-        
- 
+
 
 def plots(data1,variables):    
     for var in variables:
