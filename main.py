@@ -48,42 +48,29 @@ total_corr, pacient_corr, pacient_mood_corr = dprep.correlation(data,ids)
 ####################### INDIVIDUALIZE DATA AND REMOVE INDIVIDUAL NaN DIMS ######################
 pacients_original = dprep.individualize(data, ids, pacient_mood_corr)
 
-
-#################################### STANDARDIZATION #########################################
-mean_var = set(['activity','circumplex.arousal','circumplex.valence', 'time','id'])
-pacients_standardized = dprep.standardization(pacients_original, ids, mean_var)
-
+################################## ATTRIBUTE AGGREGATION ####################################
+mean_var = set(['mood','activity','circumplex.arousal','circumplex.valence'])
+aggregated_pacients, labels = dprep.aggregate_and_get_labels(pacients_original, ids, mean_var)
 
 
-######################################## PCA ##############################################
-pacients_pca = dprep.pca(pacients_standardized,ids)
+################################## SPLIT DATA TRAIN/TEST ####################################
+X_train, Y_train, X_test, Y_test = tt.train_test(aggregated_pacients, labels, ids, 0.65)
 
+
+############################### STANDARDIZATION and PCA ######################################
+X_train_st, X_test_st  = dprep.standardization(X_train, X_test, ids)
+X_train_pca, X_test_pca  = dprep.pca(X_train_st, X_test_st, ids)
 
 
 ##############################  Tests ###########################
-    
-X_train, Y_train, X_test, Y_test = tt.train_test_pca(pacients_pca,
-                                                     pacients_original, 
-                                                     ids, 
-                                                     0.6)
-
-_, _, X_test_orig, _ = tt.train_test_individual_pacient(pacients_original,
-                                         pacients_original, 
-                                         ids, 
-                                         0.6)
-
-
-X_train_all, Y_train_all, X_test_all, Y_test_all = tt.train_test_all(X_train, Y_train, X_test, Y_test, ids)
-
-
-bench_predictions = tt.benchmark(X_test_orig,ids, period = 3)
-svr_predictions = tt.svm_regression(X_train, Y_train, X_test,
-                                    X_train_all, Y_train_all, X_test_all, 
-                                    ids,            
+bench_predictions = tt.benchmark(pacients_original, Y_test, ids)
+svr_predictions = tt.svm_regression(X_train_pca, Y_train, X_test_pca,                          
+                                    ids,   
+                                    kernel = 'rbf',
                                     degree = 2)
 
-bench, bench_all = tt.prediction_stats(bench_predictions, Y_test, Y_test_all, ids)
-svr,svr_all = tt.prediction_stats(svr_predictions, Y_test,Y_test_all,ids)
+bench = tt.prediction_stats(bench_predictions, Y_test, ids)
+svr = tt.prediction_stats(svr_predictions, Y_test, ids)
 
 
 plt.figure()
@@ -111,6 +98,8 @@ def plots(data1,variables):
 
 
 
+pid = 'AS14.01'
+aux = mse(bench_predictions[pid], Y_test[pid])
 
 
 

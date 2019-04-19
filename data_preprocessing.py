@@ -120,12 +120,13 @@ def correlation(data,ids):
 
 ####################### INDIVIDUALIZE DATA AND REMOVE INDIVIDUAL DIMS ######################
 def individualize(data,ids, pacient_mood_corr):
-    pacients = {}  
-    pacients['all'] = data.drop(columns = 'screen')
+    pacients = {}     
     for pid in ids:
          pacient_dataframe = data.loc[data.id == pid]
          pacient_corr = pacient_mood_corr[pid]
-         nan_vars = pacient_corr.index[(pacient_corr.isna())].tolist()
+         nan_vars = pacient_corr.index[(pacient_corr.isna()) |  
+                                       ((pacient_corr > -0.01) & 
+                                        (pacient_corr < 0.01))].tolist()
          nan_vars += ['id','screen','time']                                       
          
          pacient_dataframe= pacient_dataframe.drop(columns = nan_vars)
@@ -135,44 +136,66 @@ def individualize(data,ids, pacient_mood_corr):
 
 
 
-#################################### STANDARDIZATION #########################################
-mean_var = set(['mood','activity','circumplex.arousal','circumplex.valence'])
-
-def standardization(pacients_original, ids, mean_var):
-    pacients_standardized = {}
-    scaled_features = pacients_original['all'].copy()
-    col_names = set(scaled_features.columns)     
-    col_names = list(col_names-mean_var)
-        
-    features = scaled_features[col_names]
-    scaler = StandardScaler().fit(features.values)
-    features = scaler.transform(features.values)    
-    scaled_features[col_names] = features  
-        
-    pacients_standardized['all'] = scaled_features
-    for pid in ids:        
-        scaled_features = pacients_original[pid].copy()
-        col_names = set(scaled_features.columns)        
-        col_names = list(col_names-mean_var)
-        
-        features = scaled_features[col_names]
-        scaler = StandardScaler().fit(features.values)
-        features = scaler.transform(features.values)    
-        scaled_features[col_names] = features  
-        
-        pacients_standardized[pid] = scaled_features
+################################## ATTRIBUTE AGGREGATION ####################################
     
-    return pacients_standardized
+
+def aggregate_and_get_labels(pacients_original, ids, mean_var, period = 3):
+    aggregated_pacients = {}
+    labels = {}
+    for pid in ids:
+        pacient_dataframe = pacients_original[pid]
+        
+        aggregated_dataframe = pd.DataFrame()
+        label_dataframe = pd.DataFrame()
+        
+        for i in range(pacient_dataframe.shape[0] - period ):
+            days = pacient_dataframe.iloc[i:i+period, :]
+            all_var = set(days.columns)
+            sum_var = all_var - mean_var
+            new_mean_var = all_var - sum_var
+            mean_row = (days[list(new_mean_var)].mean().to_frame()).T
+            sum_row = (days[list(sum_var)].sum().to_frame()).T
+            final_row = pd.concat([mean_row, sum_row], axis=1, sort=False)
+            aggregated_dataframe = pd.concat([aggregated_dataframe, final_row], axis=0, sort=False)
+            
+            label_mood =  (pacient_dataframe.iloc[i+period, :].to_frame().T)[['mood']]
+            label_dataframe = pd.concat([label_dataframe, label_mood], axis=0, sort=False)
+            
+        
+        aggregated_pacients[pid] = aggregated_dataframe
+        labels[pid] = label_dataframe
+    
+    return aggregated_pacients, labels
+        
+
+
+#################################### STANDARDIZATION #########################################
+
+
+def standardization(X_train, X_test, ids):
+    X_train_st = {}
+    X_test_st = {}
+    
+    for pid in ids:        
+        scaler = StandardScaler()
+        scaler = scaler.fit(X_train[pid].values)   
+        X_train_st[pid] = scaler.transform(X_train[pid].values)
+        X_test_st[pid] = scaler.transform(X_test[pid].values)
+    
+    return X_train_st, X_test_st
 
 
 ######################################## PCA ##############################################
     
-def pca(pacients_standardized, ids):
-    pacients_pca = {}   
+def pca(X_train, X_test, ids):    
+    X_train_pca = {}
+    X_test_pca = {}
     for pid in ids:        
-        pca = PCA(n_components=10)
-        pacients_pca[pid] = pca.fit_transform(pacients_standardized[pid])
-    return pacients_pca
+        pca = PCA(n_components=.9)
+        pca = pca.fit(X_train[pid])
+        X_train_pca[pid] = pca.transform(X_train[pid])
+        X_test_pca[pid] = pca.transform(X_test[pid])
+    return X_train_pca, X_test_pca
 
 
     
