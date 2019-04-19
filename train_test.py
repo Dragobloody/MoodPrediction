@@ -69,7 +69,7 @@ def train_test_pca(patient_data, mood_pacient_data, ids, ratio_train, period = 3
         y_train[pid] = []
         # first day from test is also the last label for train that is why we add 1
         for i in range(split_index - period + 1):
-            x = pid_data[i:i+period, :]*(np.array([0.1,0.3,0.6])[:,np.newaxis])
+            x = pid_data[i:i+period, :]*(np.linspace(0.1,0.9,period)[:,np.newaxis])
             if ravel:
                 x = x.ravel(order='F')
             X_train[pid].append(x)
@@ -83,7 +83,7 @@ def train_test_pca(patient_data, mood_pacient_data, ids, ratio_train, period = 3
         y_test[pid] = []
         # first day from test is also the last label for train that is why we add 1
         for i in range(split_index, pid_data.shape[0] - period):
-            x = pid_data[i:i+period, :]*(np.array([0.1,0.3,0.6])[:,np.newaxis])
+            x = pid_data[i:i+period, :]*(np.linspace(0.1,0.9,period)[:,np.newaxis])
             if ravel:
                 x = x.ravel(order='F')
             X_test[pid].append(x)
@@ -142,8 +142,8 @@ def choose_algorithm(X, y):
         SVR(kernel='rbf', gamma = 'scale', C=1),
         SVR(kernel='poly', degree=2, gamma = 'auto', C=1),
         SVR(kernel='poly', degree=3, gamma = 'auto', C=1),
-        SVR(kernel='poly', degree=5, gamma = 'auto', C=1),
-        SVR(kernel='poly', degree=7, gamma = 'auto', C=1),
+#         SVR(kernel='poly', degree=5, gamma = 'auto', C=1),
+#         SVR(kernel='poly', degree=7, gamma = 'auto', C=1),
         GradientBoostingRegressor(n_estimators=100, learning_rate=0.01, max_depth=3, random_state=0, loss='ls'),
         GradientBoostingRegressor(n_estimators=100, learning_rate=0.01, max_depth=3, random_state=0, loss='lad'),
         GradientBoostingRegressor(n_estimators=100, learning_rate=0.001, max_depth=3, random_state=0, loss='ls'),
@@ -158,6 +158,8 @@ def choose_algorithm(X, y):
     scores = []
     for algorithm in algorithms:
         cv = cross_val_score(algorithm, X, y, cv=10, scoring='neg_mean_squared_error')
+        print(algorithm)
+        print(sum(cv)/len(cv))
         scores += [sum(cv)/len(cv)]
     best = (np.array(scores)).argmax(0)
     return algorithms[best]
