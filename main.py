@@ -77,10 +77,11 @@ X_train_all, Y_train_all, X_test_all, Y_test_all = tt.train_test_all(X_train, Y_
 
 
 bench_predictions = tt.benchmark(X_test_orig,ids, period = 3)
-svr_predictions = tt.svm_regression(X_train, Y_train, X_test,
-                                    X_train_all, Y_train_all, X_test_all, 
-                                    ids,            
-                                    degree = 2)
+algorithm = algorithms[tt.choose_algorithm(X_train_all, Y_train_all)]
+svr_predictions = tt.regression(algorithm,
+                                X_train, Y_train, X_test,
+                                X_train_all, Y_train_all, X_test_all, 
+                                ids)
 
 bench, bench_all = tt.prediction_stats(bench_predictions, Y_test, Y_test_all, ids)
 svr,svr_all = tt.prediction_stats(svr_predictions, Y_test,Y_test_all,ids)
