@@ -144,10 +144,10 @@ def choose_algorithm(X, y):
         SVR(kernel='poly', degree=3, gamma = 'auto', C=1),
         SVR(kernel='poly', degree=5, gamma = 'auto', C=1),
         SVR(kernel='poly', degree=7, gamma = 'auto', C=1),
-        GradientBoostingRegressor(n_estimators=100, learning_rate=0.01, max_depth=3, random_stat=0, loss='ls'),
-        GradientBoostingRegressor(n_estimators=100, learning_rate=0.01, max_depth=3, random_stat=0, loss='lad'),
-        GradientBoostingRegressor(n_estimators=100, learning_rate=0.001, max_depth=3, random_stae=0, loss='ls'),
-        GradientBoostingRegressor(n_estimators=100, learning_rate=0.001, max_depth=3, random_stae=0, loss='lad'),
+        GradientBoostingRegressor(n_estimators=100, learning_rate=0.01, max_depth=3, random_state=0, loss='ls'),
+        GradientBoostingRegressor(n_estimators=100, learning_rate=0.01, max_depth=3, random_state=0, loss='lad'),
+        GradientBoostingRegressor(n_estimators=100, learning_rate=0.001, max_depth=3, random_state=0, loss='ls'),
+        GradientBoostingRegressor(n_estimators=100, learning_rate=0.001, max_depth=3, random_state=0, loss='lad'),
         GradientBoostingRegressor(n_estimators=100, learning_rate=0.0001, max_depth=3, random_state=0, loss='ls'),
         GradientBoostingRegressor(n_estimators=100, learning_rate=0.0001, max_depth=3, random_state=0, loss='lad'),
         MLPRegressor(hidden_layer_sizes=[50,50,50],solver='lbfgs',learning_rate='adaptive'),
@@ -160,7 +160,7 @@ def choose_algorithm(X, y):
         cv = cross_val_score(algorithm, X, y, cv=10, scoring='neg_mean_squared_error')
         scores += [sum(cv)/len(cv)]
     best = (np.array(scores)).argmax(0)
-    return best
+    return algorithms[best]
 
 def regression(algorithm,
                X_train, y_train, X_test,
