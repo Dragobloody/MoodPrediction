@@ -58,18 +58,18 @@ def fill_missing_data(data, ids, variables):
     mean_var = set(['mood','activity','circumplex.arousal','circumplex.valence'])
     zero_var = set(variables) - mean_var
     for pid in ids:        
-        pacient_dataframe = data.loc[data.id == pid]
-        pacient_dates = pacient_dataframe['time'].unique()
+        patient_dataframe = data.loc[data.id == pid]
+        patient_dates = patient_dataframe['time'].unique()
         
         media = {}
-        media['mood'] = (pacient_dataframe.loc[pacient_dataframe.variable == 'mood'])['value'].mean()
-        media['activity'] = (pacient_dataframe.loc[pacient_dataframe.variable == 'activity'])['value'].mean()
-        media['circumplex.arousal'] = (pacient_dataframe.loc[pacient_dataframe.variable == 'circumplex.arousal'])['value'].mean()
-        media['circumplex.valence'] = (pacient_dataframe.loc[pacient_dataframe.variable == 'circumplex.valence'])['value'].mean()
+        media['mood'] = (patient_dataframe.loc[patient_dataframe.variable == 'mood'])['value'].mean()
+        media['activity'] = (patient_dataframe.loc[patient_dataframe.variable == 'activity'])['value'].mean()
+        media['circumplex.arousal'] = (patient_dataframe.loc[patient_dataframe.variable == 'circumplex.arousal'])['value'].mean()
+        media['circumplex.valence'] = (patient_dataframe.loc[patient_dataframe.variable == 'circumplex.valence'])['value'].mean()
         
-        for day in pacient_dates:
-            pacient_day_dataframe = pacient_dataframe.loc[pacient_dataframe['time'] == day]
-            day_variables = pacient_day_dataframe['variable'].unique()
+        for day in patient_dates:
+            patient_day_dataframe = patient_dataframe.loc[patient_dataframe['time'] == day]
+            day_variables = patient_day_dataframe['variable'].unique()
             
             missing_variables = set(variables) - set(day_variables)
             mean_variables = missing_variables.intersection(mean_var)
@@ -90,9 +90,9 @@ def fill_missing_data(data, ids, variables):
 
 def remove_days(data,ids):
     for pid in ids:
-        pacient_dataframe = data.loc[data.id == pid]
-        pacient_dates = pacient_dataframe['time'].unique()       
-        for day in pacient_dates:            
+        patient_dataframe = data.loc[data.id == pid]
+        patient_dates = patient_dataframe['time'].unique()       
+        for day in patient_dates:            
             if next(data.loc[(data.id == pid) & (data.time == day)].iterrows())[1].screen == 0:                
                 data = data.drop(data[(data.id == pid) & (data.time == day)].index)
             else:
@@ -106,101 +106,58 @@ def remove_days(data,ids):
 def correlation(data,ids):
     data_corr = data.drop(columns = ['id','time'])
     total_corr = data_corr.corr()
-    pacient_mood_corr = pd.DataFrame()
+    patient_mood_corr = pd.DataFrame()
     
-    pacient_corr= {}    
+    patient_corr= {}    
     for pid in ids:
-        pacient_dataframe = data.loc[data.id == pid].drop(columns = ['id','time'])
-        pacient_corr[pid] = pacient_dataframe.corr()
-        pacient_mood_corr[pid] = pacient_corr[pid].mood 
+        patient_dataframe = data.loc[data.id == pid].drop(columns = ['id','time'])
+        patient_corr[pid] = patient_dataframe.corr()
+        patient_mood_corr[pid] = patient_corr[pid].mood 
         
     
-    return total_corr, pacient_corr, pacient_mood_corr
+    return total_corr, patient_corr, patient_mood_corr
 
 
 ####################### INDIVIDUALIZE DATA AND REMOVE INDIVIDUAL DIMS ######################
-def individualize(data,ids, pacient_mood_corr):
-    pacients = {}  
-    pacients['all'] = data.drop(columns = 'screen')
+def individualize(data,ids, patient_mood_corr):
+    patients = {}     
     for pid in ids:
-         pacient_dataframe = data.loc[data.id == pid]
-         pacient_corr = pacient_mood_corr[pid]
-         nan_vars = pacient_corr.index[(pacient_corr.isna())].tolist()
+         patient_dataframe = data.loc[data.id == pid]
+         patient_corr = patient_mood_corr[pid]
+         nan_vars = patient_corr.index[(patient_corr.isna()) |  
+                                       ((patient_corr > -0.01) & 
+                                        (patient_corr < 0.01))].tolist()
          nan_vars += ['id','screen','time']                                       
          
-         pacient_dataframe= pacient_dataframe.drop(columns = nan_vars)
-         pacients[pid] = pacient_dataframe
+         patient_dataframe= patient_dataframe.drop(columns = nan_vars)
+         patients[pid] = patient_dataframe
     
-    return pacients
-
+    return patients
 
 
 #################################### STANDARDIZATION #########################################
-mean_var = set(['mood','activity','circumplex.arousal','circumplex.valence'])
 
-def standardization(pacients_original, ids, mean_var):
-    pacients_standardized = {}
-    scaled_features = pacients_original['all'].copy()
-    col_names = set(scaled_features.columns)     
-    col_names = list(col_names-mean_var)
-        
-    features = scaled_features[col_names]
-    scaler = StandardScaler().fit(features.values)
-    features = scaler.transform(features.values)    
-    scaled_features[col_names] = features  
-        
-    pacients_standardized['all'] = scaled_features
-    for pid in ids:        
-        scaled_features = pacients_original[pid].copy()
-        col_names = set(scaled_features.columns)        
-        col_names = list(col_names-mean_var)
-        
-        features = scaled_features[col_names]
-        scaler = StandardScaler().fit(features.values)
-        features = scaler.transform(features.values)    
-        scaled_features[col_names] = features  
-        
-        pacients_standardized[pid] = scaled_features
+def standardization(X_train, X_test, ids):
+    X_train_st = {}
+    X_test_st = {}
     
-    return pacients_standardized
-
+    for pid in ids:        
+        scaler = StandardScaler()
+        scaler = scaler.fit(X_train[pid])
+        X_train_st[pid] = scaler.transform(X_train[pid])
+        X_test_st[pid] = scaler.transform(X_test[pid])
+    
+    return X_train_st, X_test_st
 
 ######################################## PCA ##############################################
-    
-def pca(pacients_standardized, ids):
-    pacients_pca = {}   
+
+def pca(X_train, X_test, ids):    
+    X_train_pca = {}
+    X_test_pca = {}
     for pid in ids:        
-        pca = PCA(n_components=10)
-        pacients_pca[pid] = pca.fit_transform(pacients_standardized[pid])
-    return pacients_pca
+        pca = PCA(n_components=3)
+        pca = pca.fit(X_train[pid])
+        X_train_pca[pid] = pca.transform(X_train[pid])
+        X_test_pca[pid] = pca.transform(X_test[pid])
+    return X_train_pca, X_test_pca
 
-
-    
-    
-    
-
-        
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-
-            
-   
-    
-    
-    

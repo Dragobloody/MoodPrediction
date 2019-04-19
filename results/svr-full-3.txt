@@ -1,0 +1,11 @@
+
+    Benchmark average: 0.5075710503450583
+    Benchmark all: 0.5030628047278427
+    Baseline average: 0.573200928209318
+    Baseline all: 0.5621562120708178
+    SVM average: 0.540468778425498
+    SVM all: 0.5601894199134047
+    T-Test average: Ttest_relResult(statistic=-0.6213577717437195, pvalue=0.5397743835384238)
+    T-Test average: Ttest_relResult(statistic=0.3331002904706209, pvalue=0.7417297976263126)
+    R^2 avg: 0.05710414650945417
+    R^2 all: 0.003498657695461649

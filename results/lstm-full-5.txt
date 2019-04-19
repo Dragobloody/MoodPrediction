@@ -1,0 +1,8 @@
+Benchmark average: 0.5486941657433382
+Benchmark all: 0.5425157400864244
+LSTM average: 0.5085396335025468
+LSTM all: 0.49066601960131756
+T-Test average benchmark: Ttest_relResult(statistic=0.30829786760324807, pvalue=0.7603122374586785)
+T-Test average baseline: Ttest_relResult(statistic=0.9441000897209293, pvalue=0.35380974674589427)
+R^2 average: 0.026035649035448194
+R^2 all: 0.02124215855491174
